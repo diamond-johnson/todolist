@@ -2,12 +2,12 @@
 name = "todolist"
 version = "0.1.0"
 description = "A Python ToDoList application"
-authors = [{name = "Rose", email = "rose729729@gmail.com"}]
+authors = ["Rose <rose729729@gmail.com>"]
 readme = "README.md"
 packages = [{include = "todolist", from = "src"}]
-requires-python = ">=3.13,<4.0"
 
 [tool.poetry.dependencies]
+python = "3.13"
 python-dotenv = ">=1.1.1,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
