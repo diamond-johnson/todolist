@@ -20,9 +20,10 @@ from .exceptions import (
 
 class BaseService:
     """Base service with shared validation logic."""
-
-    def _validate_text(self, text: str, max_words: int, field: str) -> None:
-        """Validate text word count."""
+    def _validate_text(self, text: Optional[str], max_words: int, field: str) -> None:
+        """Validate text word count if provided."""
+        if text is None:
+            return
         words = text.split()
         if len(words) > max_words:
             raise ValidationError(f"{field} exceeds {max_words} words")
@@ -30,12 +31,11 @@ class BaseService:
 
 class ProjectService(BaseService):
     """Handles project business logic."""
-
     def __init__(self, storage: Storage, config: Config) -> None:
         self.storage = storage
         self.config = config
 
-    def create_project(self, name: str, description: str) -> Project:
+    def create_project(self, name: str, description: Optional[str]) -> Project:
         """Create a new project with validation."""
         self._validate_text(name, 30, "Project name")
         self._validate_text(description, 150, "Project description")
@@ -83,7 +83,6 @@ class ProjectService(BaseService):
 
 class TaskService(BaseService):
     """Handles task business logic."""
-
     def __init__(self, storage: Storage, config: Config) -> None:
         self.storage = storage
         self.config = config
@@ -101,7 +100,7 @@ class TaskService(BaseService):
         self,
         project_id: ProjectId,
         title: str,
-        description: str,
+        description: Optional[str],
         status: TaskStatus = "todo",
         deadline_str: Optional[str] = None,
     ) -> Task:

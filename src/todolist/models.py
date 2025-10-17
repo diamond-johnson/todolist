@@ -15,7 +15,7 @@ class Task:
 
     id: TaskId
     title: str
-    description: str
+    description: Optional[str]
     status: TaskStatus
     deadline: Optional[datetime]
     created_at: datetime = field(default_factory=datetime.now)
@@ -27,6 +27,6 @@ class Project:
 
     id: ProjectId
     name: str
-    description: str
+    description: Optional[str]
     created_at: datetime = field(default_factory=datetime.now)
     tasks: list[Task] = field(default_factory=list)
