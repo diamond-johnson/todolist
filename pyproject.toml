@@ -1,17 +1,21 @@
-[project]
+[tool.poetry]
 name = "todolist"
 version = "0.1.0"
 description = "A Python ToDoList application"
-authors = [
-    {name = "Rose",email = "rose729729@gmail.com"}
-]
+authors = [{name = "Rose", email = "rose729729@gmail.com"}]
 readme = "README.md"
+packages = [{include = "todolist", from = "src"}]
 requires-python = ">=3.13,<4.0"
-dependencies = [
-    "poetry-core (>=2.0.0)",
-    "python-dotenv (>=1.1.1,<2.0.0)"
-]
 
+[tool.poetry.dependencies]
+python-dotenv = ">=1.1.1,<2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.11.0"
+pytest = "^8.0.0"
+
+[tool.poetry.scripts]
+todolist = "todolist.cli:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

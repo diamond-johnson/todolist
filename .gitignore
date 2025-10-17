@@ -13,3 +13,17 @@ __pycache__/
 
 # Poetry.toml
 poetry.toml
+
+*.pyo
+*.pyd
+.Python
+env
+venv
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+dist/
+build/
+*.egg
+.poetry-cache/
