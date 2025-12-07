@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A Python ToDoList application"
 authors = ["Rose <rose729729@gmail.com>"]
 readme = "README.md"
-packages = [{include = "todolist", from = "src"}]
+packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.13"
@@ -15,7 +15,7 @@ mypy = "^1.11.0"
 pytest = "^8.0.0"
 
 [tool.poetry.scripts]
-todolist = "todolist.cli:main"
+todolist = "app.main:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

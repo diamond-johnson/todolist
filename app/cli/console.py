@@ -1,10 +1,11 @@
 import sys
 from typing import NoReturn
 
-from .services import ProjectService, TaskService
-from .models import Project, Task, ProjectId, TaskId
-from .exceptions import TodoListError, ValidationError
-
+from app.services.project_service import ProjectService
+from app.services.task_service import TaskService
+from app.models.project import Project, ProjectId
+from app.models.task import Task, TaskId
+from app.exceptions.base import TodoListError, ValidationError
 
 def print_project(project: Project) -> None:
     """Print project details."""
@@ -161,20 +162,3 @@ class CLI:
             except ValueError as e:
                 print(f"Invalid input: {e}")
 
-
-# Entry point — dependencies are now injected from outside
-def main() -> None:
-    from .config import Config
-    from .storage import InMemoryStorage
-
-    config = Config()
-    storage = InMemoryStorage()
-    project_service = ProjectService(storage, config)
-    task_service = TaskService(storage, config)
-
-    cli = CLI(project_service, task_service)
-    cli.run()
-
-
-if __name__ == "__main__":
-    main()
