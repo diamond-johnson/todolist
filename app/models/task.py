@@ -1,19 +1,33 @@
 # app/models/task.py
-from dataclasses import dataclass, field
-from typing import NewType, Literal, Optional
+from typing import Optional
+from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+from app.db.base import Base
 
 
-TaskId = NewType("TaskId", int)
-TaskStatus = Literal["todo", "doing", "done"]
+class TaskStatus(str):
+    TODO = "todo"
+    DOING = "doing"
+    DONE = "done"
 
 
-@dataclass
-class Task:
-    """Represents a task in the To-Do List."""
-    id: TaskId
-    title: str
-    description: Optional[str] = None
-    status: TaskStatus = "todo"
-    deadline: Optional[datetime] = None
-    created_at: datetime = field(default_factory=datetime.now)
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[TaskStatus] = mapped_column(default=TaskStatus.TODO)
+    deadline: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Foreign key + relationship
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)
+    project: Mapped["Project"] = relationship("Project", back_populates="tasks")
+
+    def __repr__(self) -> str:
+        return f"<Task {self.id}: {self.title} [{self.status}]>"
