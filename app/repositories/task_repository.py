@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.task import Task, TaskStatus
 from app.models.project import Project
 from app.exceptions.repository_exceptions import TaskNotFoundError
-from typing import List
+from typing import List, Any
 from datetime import datetime
 from . import task_repository  # Import abstract
 
@@ -24,7 +24,7 @@ class SQLAlchemyTaskRepository(task_repository):
         self.db.refresh(task)
         return task
 
-    def get(self, task_id: int) -> Task:
+    def get(self, task_id: int) -> type[Task]:
         task = self.db.query(Task).filter(Task.id == task_id).first()
         if not task:
             raise TaskNotFoundError(f"Task with ID {task_id} not found")
@@ -40,10 +40,10 @@ class SQLAlchemyTaskRepository(task_repository):
         self.db.delete(task)
         self.db.commit()
 
-    def list_by_project(self, project: Project) -> List[Task]:
+    def list_by_project(self, project: Project) -> list[type[Task]]:
         return self.db.query(Task).filter(Task.project_id == project.id).order_by(Task.created_at).all()
 
-    def get_overdue_tasks(self) -> List[Task]:
+    def get_overdue_tasks(self) -> list[type[Task]]:
         now = datetime.utcnow()
         return (
             self.db.query(Task)

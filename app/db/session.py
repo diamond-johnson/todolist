@@ -41,7 +41,6 @@ SessionLocal = sessionmaker(
 def get_db() -> Generator[Session, None, None]:
     """
     Dependency that yields a database session.
-    Usage in services: db: Session = next(get_db())
     """
     db = SessionLocal()
     try:
