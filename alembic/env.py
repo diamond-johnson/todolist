@@ -5,7 +5,8 @@ from sqlalchemy import pool
 
 from alembic import context
 from app.db.base import Base
-
+from app.models.project import Project
+from app.models.task import Task
 import os
 from dotenv import load_dotenv
 load_dotenv()

@@ -1,11 +1,10 @@
-# app/repositories/project_repository.py
 from sqlalchemy.orm import Session
 from app.models.project import Project
 from app.exceptions.repository_exceptions import ProjectNotFoundError
 from typing import List
+from . import project_repository  # Import abstract
 
-
-class SQLAlchemyProjectRepository:
+class SQLAlchemyProjectRepository(project_repository):
     def __init__(self, db: Session):
         self.db = db
 

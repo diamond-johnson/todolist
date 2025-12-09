@@ -1,13 +1,12 @@
-# app/repositories/task_repository.py
 from sqlalchemy.orm import Session
 from app.models.task import Task, TaskStatus
 from app.models.project import Project
 from app.exceptions.repository_exceptions import TaskNotFoundError
 from typing import List
 from datetime import datetime
+from . import task_repository  # Import abstract
 
-
-class SQLAlchemyTaskRepository:
+class SQLAlchemyTaskRepository(task_repository):
     def __init__(self, db: Session):
         self.db = db
 
