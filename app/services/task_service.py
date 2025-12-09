@@ -1,19 +1,17 @@
-# app/services/task_service.py
 from typing import Optional
 from datetime import datetime
 
-from app.models.project import Project, ProjectId
-from app.models.task import Task, TaskId, TaskStatus
+from app.models.project import Project
+from app.models.task import Task, TaskStatus
 from app.core.config import Config
-from app.repositories.project_repository import InMemoryProjectRepository
-from app.repositories.task_repository import InMemoryTaskRepository
+from app.repositories.project_repository import SQLAlchemyProjectRepository
+from app.repositories.task_repository import SQLAlchemyTaskRepository
 from app.exceptions.service_exceptions import (
     TaskLimitExceededError,
     InvalidStatusError,
     InvalidDeadlineError,
 )
 from app.exceptions.base import ValidationError
-
 
 class BaseService:
     """Base service with shared validation logic."""
@@ -24,14 +22,12 @@ class BaseService:
         if len(words) > max_words:
             raise ValidationError(f"{field} exceeds {max_words} words")
 
-
 class TaskService(BaseService):
     """Handles task business logic."""
-
     def __init__(
         self,
-        project_repo: InMemoryProjectRepository,
-        task_repo: InMemoryTaskRepository,
+        project_repo: SQLAlchemyProjectRepository,
+        task_repo: SQLAlchemyTaskRepository,
         config: Config,
     ) -> None:
         self.project_repo = project_repo
@@ -51,39 +47,34 @@ class TaskService(BaseService):
         project_id: ProjectId,
         title: str,
         description: Optional[str],
-        status: TaskStatus = "todo",
+        status: TaskStatus = TaskStatus.TODO,
         deadline_str: Optional[str] = None,
     ) -> Task:
         self._validate_text(title, 30, "Task title")
         self._validate_text(description, 150, "Task description")
-        if status not in ("todo", "doing", "done"):
+        if status not in (TaskStatus.TODO, TaskStatus.DOING, TaskStatus.DONE):
             raise InvalidStatusError(f"Invalid status '{status}'")
 
-        project = self.project_repo.get_project(project_id)
-        if len(project.tasks) >= self.config.max_tasks:
+        project = self.project_repo.get(project_id)
+        if len(self.task_repo.list_by_project(project)) >= self.config.max_tasks:
             raise TaskLimitExceededError("Maximum tasks per project exceeded")
 
-        task = Task(
-            id=self.task_repo.get_next_task_id(),
-            title=title,
-            description=description,
-            status=status,
-            deadline=self._parse_deadline(deadline_str),
+        return self.task_repo.create(
+            project, title, description, status, self._parse_deadline(deadline_str)
         )
-        self.task_repo.add_task(project, task)
-        return task
 
     def change_task_status(
         self, project_id: ProjectId, task_id: TaskId, new_status: TaskStatus
     ) -> Task:
-        if new_status not in ("todo", "doing", "done"):
+        if new_status not in (TaskStatus.TODO, TaskStatus.DOING, TaskStatus.DONE):
             raise InvalidStatusError(f"Invalid status '{new_status}'")
 
-        project = self.project_repo.get_project(project_id)
-        task = self.task_repo.get_task(project, task_id)
+        project = self.project_repo.get(project_id)
+        task = self.task_repo.get(task_id)
+        if task.project_id != project.id:
+            raise ValidationError("Task does not belong to project")
         task.status = new_status
-        self.task_repo.update_task(project, task)
-        return task
+        return self.task_repo.update(task)
 
     def edit_task(
         self,
@@ -94,8 +85,10 @@ class TaskService(BaseService):
         new_status: Optional[TaskStatus] = None,
         new_deadline_str: Optional[str] = None,
     ) -> Task:
-        project = self.project_repo.get_project(project_id)
-        task = self.task_repo.get_task(project, task_id)
+        project = self.project_repo.get(project_id)
+        task = self.task_repo.get(task_id)
+        if task.project_id != project.id:
+            raise ValidationError("Task does not belong to project")
 
         if new_title is not None:
             self._validate_text(new_title, 30, "Task title")
@@ -104,19 +97,21 @@ class TaskService(BaseService):
             self._validate_text(new_description, 150, "Task description")
             task.description = new_description
         if new_status is not None:
-            if new_status not in ("todo", "doing", "done"):
+            if new_status not in (TaskStatus.TODO, TaskStatus.DOING, TaskStatus.DONE):
                 raise InvalidStatusError(f"Invalid status '{new_status}'")
             task.status = new_status
         if new_deadline_str is not None:
             task.deadline = self._parse_deadline(new_deadline_str)
 
-        self.task_repo.update_task(project, task)
-        return task
+        return self.task_repo.update(task)
 
     def delete_task(self, project_id: ProjectId, task_id: TaskId) -> None:
-        project = self.project_repo.get_project(project_id)
-        self.task_repo.delete_task(project, task_id)
+        project = self.project_repo.get(project_id)
+        task = self.task_repo.get(task_id)
+        if task.project_id != project.id:
+            raise ValidationError("Task does not belong to project")
+        self.task_repo.delete(task_id)
 
-    def list_tasks(self, project_id: ProjectId) -> list[Task]:
-        project = self.project_repo.get_project(project_id)
-        return self.task_repo.get_tasks(project)
+    def list_tasks(self, project_id: ProjectId) -> List[Task]:
+        project = self.project_repo.get(project_id)
+        return self.task_repo.list_by_project(project)

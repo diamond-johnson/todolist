@@ -1,10 +1,8 @@
 # app/repositories/__init__.py
-from .project_repository import InMemoryProjectRepository, ProjectRepositoryProtocol
-from .task_repository import InMemoryTaskRepository, TaskRepositoryProtocol
+from .project_repository import SQLAlchemyProjectRepository
+from .task_repository import SQLAlchemyTaskRepository
 
 __all__ = [
-    "InMemoryProjectRepository",
-    "ProjectRepositoryProtocol",
-    "InMemoryTaskRepository",
-    "TaskRepositoryProtocol",
+    "SQLAlchemyProjectRepository",
+    "SQLAlchemyTaskRepository",
 ]

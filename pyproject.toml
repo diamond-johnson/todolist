@@ -11,6 +11,8 @@ python = "^3.13"
 python-dotenv = ">=1.1.1,<2.0.0"
 sqlalchemy = "^2.0.44"
 psycopg = {extras = ["binary"], version = "^3.3.2"}
+psycopg2-binary = "^2.9.11"
+psycopg2 = {extras = ["binary"], version = "^2.9.11"}
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.11.0"

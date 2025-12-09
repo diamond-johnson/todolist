@@ -1,48 +1,36 @@
 # app/repositories/project_repository.py
-from typing import Protocol, List
-from app.models.project import Project, ProjectId
+from sqlalchemy.orm import Session
+from app.models.project import Project
 from app.exceptions.repository_exceptions import ProjectNotFoundError
+from typing import List
 
 
-class ProjectRepositoryProtocol(Protocol):
-    def get_next_project_id(self) -> ProjectId: ...
-    def add_project(self, project: Project) -> None: ...
-    def get_projects(self) -> List[Project]: ...
-    def get_project(self, project_id: ProjectId) -> Project: ...
-    def update_project(self, project: Project) -> None: ...
-    def delete_project(self, project_id: ProjectId) -> None: ...
+class SQLAlchemyProjectRepository:
+    def __init__(self, db: Session):
+        self.db = db
 
+    def create(self, name: str, description: str | None = None) -> Project:
+        project = Project(name=name, description=description)
+        self.db.add(project)
+        self.db.commit()
+        self.db.refresh(project)
+        return project
 
-class InMemoryProjectRepository:
-    """In-memory repository for projects."""
-
-    def __init__(self) -> None:
-        self._projects: dict[ProjectId, Project] = {}
-        self._next_project_id: int = 1
-
-    def get_next_project_id(self) -> ProjectId:
-        pid = ProjectId(self._next_project_id)
-        self._next_project_id += 1
-        return pid
-
-    def add_project(self, project: Project) -> None:
-        self._projects[project.id] = project
-
-    def get_projects(self) -> List[Project]:
-        return sorted(self._projects.values(), key=lambda p: p.created_at)
-
-    def get_project(self, project_id: ProjectId) -> Project:
-        try:
-            return self._projects[project_id]
-        except KeyError:
+    def get(self, project_id: int) -> Project:
+        project = self.db.query(Project).filter(Project.id == project_id).first()
+        if not project:
             raise ProjectNotFoundError(f"Project with ID {project_id} not found")
+        return project
 
-    def update_project(self, project: Project) -> None:
-        if project.id not in self._projects:
-            raise ProjectNotFoundError(f"Project with ID {project.id} not found")
-        self._projects[project.id] = project
+    def update(self, project: Project) -> Project:
+        self.db.commit()
+        self.db.refresh(project)
+        return project
 
-    def delete_project(self, project_id: ProjectId) -> None:
-        if project_id not in self._projects:
-            raise ProjectNotFoundError(f"Project with ID {project_id} not found")
-        del self._projects[project_id]
+    def delete(self, project_id: int) -> None:
+        project = self.get(project_id)
+        self.db.delete(project)
+        self.db.commit()
+
+    def list_all(self) -> List[Project]:
+        return self.db.query(Project).order_by(Project.created_at).all()

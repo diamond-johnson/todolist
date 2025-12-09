@@ -1,52 +1,53 @@
 # app/repositories/task_repository.py
-from typing import Protocol, List
-from app.models.task import Task, TaskId
+from sqlalchemy.orm import Session
+from app.models.task import Task, TaskStatus
 from app.models.project import Project
 from app.exceptions.repository_exceptions import TaskNotFoundError
+from typing import List
+from datetime import datetime
 
 
-class TaskRepositoryProtocol(Protocol):
-    def get_next_task_id(self) -> TaskId: ...
-    def add_task(self, project: Project, task: Task) -> None: ...
-    def get_tasks(self, project: Project) -> List[Task]: ...
-    def get_task(self, project: Project, task_id: TaskId) -> Task: ...
-    def update_task(self, project: Project, task: Task) -> None: ...
-    def delete_task(self, project: Project, task_id: TaskId) -> None: ...
+class SQLAlchemyTaskRepository:
+    def __init__(self, db: Session):
+        self.db = db
 
+    def create(self, project: Project, title: str, description: str | None = None,
+               status: TaskStatus = TaskStatus.TODO, deadline: datetime | None = None) -> Task:
+        task = Task(
+            title=title,
+            description=description,
+            status=status,
+            deadline=deadline,
+            project_id=project.id
+        )
+        self.db.add(task)
+        self.db.commit()
+        self.db.refresh(task)
+        return task
 
-class InMemoryTaskRepository:
-    """In-memory repository for tasks (attached to projects)."""
+    def get(self, task_id: int) -> Task:
+        task = self.db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise TaskNotFoundError(f"Task with ID {task_id} not found")
+        return task
 
-    def __init__(self) -> None:
-        self._next_task_id: int = 1
+    def update(self, task: Task) -> Task:
+        self.db.commit()
+        self.db.refresh(task)
+        return task
 
-    def get_next_task_id(self) -> TaskId:
-        tid = TaskId(self._next_task_id)
-        self._next_task_id += 1
-        return tid
+    def delete(self, task_id: int) -> None:
+        task = self.get(task_id)
+        self.db.delete(task)
+        self.db.commit()
 
-    def add_task(self, project: Project, task: Task) -> None:
-        project.tasks.append(task)
+    def list_by_project(self, project: Project) -> List[Task]:
+        return self.db.query(Task).filter(Task.project_id == project.id).order_by(Task.created_at).all()
 
-    def get_tasks(self, project: Project) -> List[Task]:
-        return sorted(project.tasks, key=lambda t: t.created_at)
-
-    def get_task(self, project: Project, task_id: TaskId) -> Task:
-        for task in project.tasks:
-            if task.id == task_id:
-                return task
-        raise TaskNotFoundError(f"Task with ID {task_id} not found")
-
-    def update_task(self, project: Project, task: Task) -> None:
-        for idx, existing in enumerate(project.tasks):
-            if existing.id == task.id:
-                project.tasks[idx] = task
-                return
-        raise TaskNotFoundError(f"Task with ID {task.id} not found")
-
-    def delete_task(self, project: Project, task_id: TaskId) -> None:
-        for idx, task in enumerate(project.tasks):
-            if task.id == task_id:
-                del project.tasks[idx]
-                return
-        raise TaskNotFoundError(f"Task with ID {task_id} not found")
+    def get_overdue_tasks(self) -> List[Task]:
+        now = datetime.utcnow()
+        return (
+            self.db.query(Task)
+            .filter(Task.deadline < now, Task.status != TaskStatus.DONE)
+            .all()
+        )

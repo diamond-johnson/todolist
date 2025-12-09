@@ -1,11 +1,9 @@
 # app/models/__init__.py
-from .project import Project, ProjectId
-from .task import Task, TaskId, TaskStatus
+from .project import Project
+from .task import Task, TaskStatus
 
 __all__ = [
     "Project",
-    "ProjectId",
     "Task",
-    "TaskId",
     "TaskStatus",
 ]
