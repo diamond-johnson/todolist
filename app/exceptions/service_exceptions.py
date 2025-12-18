@@ -1,4 +1,3 @@
-# app/exceptions/service_exceptions.py
 from .base import TodoListError
 
 

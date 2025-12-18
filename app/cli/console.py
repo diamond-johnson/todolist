@@ -13,6 +13,7 @@ from app.exceptions.base import TodoListError, ValidationError
 from datetime import datetime
 
 def print_project(project: Project) -> None:
+    """Print project details in a readable format for CLI output."""
     print(
         f"ID: {project.id}, Name: {project.name}, "
         f"Description: {project.description or 'None'}, "
@@ -20,6 +21,7 @@ def print_project(project: Project) -> None:
     )
 
 def print_task(task: Task) -> None:
+    """Print task details, handling None values for deadlines/closed times."""
     deadline_str = task.deadline.strftime("%Y-%m-%d") if task.deadline else "None"
     closed_str = task.closed_at.strftime("%Y-%m-%d %H:%M:%S") if task.closed_at else "None"
     print(
@@ -29,6 +31,7 @@ def print_task(task: Task) -> None:
     )
 
 def get_input(prompt: str, optional: bool = False) -> Optional[str]:
+    """Get user input, allowing optional fields (for flexibility in CLI)."""
     value = input(prompt).strip()
     if optional and not value:
         return None
@@ -37,10 +40,13 @@ def get_input(prompt: str, optional: bool = False) -> Optional[str]:
     return value
 
 class CLI:
+    """Command Line Interface for interacting with To-Do List (main user entry point)."""
+
     def __init__(self, config: Config):
         self.config = config
 
     def run(self) -> NoReturn:
+        """Run the CLI loop, handling user choices and DB sessions (ensures isolation per action)."""
         while True:
             print("\nTo-Do List Menu:")
             print("1. Create Project")
@@ -73,7 +79,12 @@ class CLI:
                         print_project(project)
 
                     elif choice == "2":
-                        pid = int(get_input("Project ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
                         new_name = get_input("New name (blank to skip): ", optional=True)
                         new_desc = get_input("New description (blank to skip): ", optional=True)
                         if new_name is None and new_desc is None:
@@ -84,7 +95,12 @@ class CLI:
                         print_project(project)
 
                     elif choice == "3":
-                        pid = int(get_input("Project ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
                         project_service.delete_project(pid)
                         print("Project deleted successfully.")
 
@@ -97,7 +113,12 @@ class CLI:
                             print_project(project)
 
                     elif choice == "5":
-                        pid = int(get_input("Project ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
                         title = get_input("Task title: ")
                         desc = get_input("Task description (optional): ", optional=True)
                         status_input = get_input("Status (todo/doing/done, default todo): ", optional=True) or "todo"
@@ -107,16 +128,36 @@ class CLI:
                         print_task(task)
 
                     elif choice == "6":
-                        pid = int(get_input("Project ID: "))
-                        tid = int(get_input("Task ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
+                        tid_str = get_input("Task ID: ")
+                        try:
+                            tid = int(tid_str)
+                        except ValueError:
+                            print(f"Error: '{tid_str}' is not a valid integer ID.")
+                            continue
                         new_status = get_input("New status (todo/doing/done): ")
                         task = task_service.change_task_status(pid, tid, new_status)
                         print("Task status updated:")
                         print_task(task)
 
                     elif choice == "7":
-                        pid = int(get_input("Project ID: "))
-                        tid = int(get_input("Task ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
+                        tid_str = get_input("Task ID: ")
+                        try:
+                            tid = int(tid_str)
+                        except ValueError:
+                            print(f"Error: '{tid_str}' is not a valid integer ID.")
+                            continue
                         new_title = get_input("New title (blank to skip): ", optional=True)
                         new_desc = get_input("New description (blank to skip): ", optional=True)
                         new_status = get_input("New status (todo/doing/done, blank to skip): ", optional=True)
@@ -129,13 +170,28 @@ class CLI:
                         print_task(task)
 
                     elif choice == "8":
-                        pid = int(get_input("Project ID: "))
-                        tid = int(get_input("Task ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
+                        tid_str = get_input("Task ID: ")
+                        try:
+                            tid = int(tid_str)
+                        except ValueError:
+                            print(f"Error: '{tid_str}' is not a valid integer ID.")
+                            continue
                         task_service.delete_task(pid, tid)
                         print("Task deleted successfully.")
 
                     elif choice == "9":
-                        pid = int(get_input("Project ID: "))
+                        pid_str = get_input("Project ID: ")
+                        try:
+                            pid = int(pid_str)
+                        except ValueError:
+                            print(f"Error: '{pid_str}' is not a valid integer ID.")
+                            continue
                         tasks = task_service.list_tasks(pid)
                         if not tasks:
                             print("No tasks in this project.")

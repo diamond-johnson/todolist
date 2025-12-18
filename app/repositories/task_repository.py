@@ -4,9 +4,11 @@ from app.models.project import Project
 from app.exceptions.repository_exceptions import TaskNotFoundError
 from typing import List, Any
 from datetime import datetime
-from . import task_repository  # Import abstract
+from . import TaskRepository
+from typing import cast, List
+from sqlalchemy import select
 
-class SQLAlchemyTaskRepository(task_repository):
+class SQLAlchemyTaskRepository(TaskRepository):
     def __init__(self, db: Session):
         self.db = db
 
@@ -24,8 +26,9 @@ class SQLAlchemyTaskRepository(task_repository):
         self.db.refresh(task)
         return task
 
-    def get(self, task_id: int) -> type[Task]:
-        task = self.db.query(Task).filter(Task.id == task_id).first()
+    def get(self, task_id: int) -> Task:
+        stmt = select(Task).where(Task.id == task_id)
+        task = self.db.execute(stmt).scalar_one_or_none()
         if not task:
             raise TaskNotFoundError(f"Task with ID {task_id} not found")
         return task
@@ -40,13 +43,11 @@ class SQLAlchemyTaskRepository(task_repository):
         self.db.delete(task)
         self.db.commit()
 
-    def list_by_project(self, project: Project) -> list[type[Task]]:
-        return self.db.query(Task).filter(Task.project_id == project.id).order_by(Task.created_at).all()
+    def list_by_project(self, project: Project) -> List[Task]:
+        stmt = select(Task).where(Task.project_id == project.id).order_by(Task.created_at)
+        return list(self.db.execute(stmt).scalars().all())
 
-    def get_overdue_tasks(self) -> list[type[Task]]:
+    def get_overdue_tasks(self) -> List[Task]:
         now = datetime.utcnow()
-        return (
-            self.db.query(Task)
-            .filter(Task.deadline < now, Task.status != TaskStatus.DONE)
-            .all()
-        )
+        stmt = select(Task).where(Task.deadline < now, Task.status != TaskStatus.DONE)
+        return list(self.db.execute(stmt).scalars().all())

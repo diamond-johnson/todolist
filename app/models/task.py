@@ -1,4 +1,3 @@
-# app/models/task.py
 import enum
 from typing import Optional
 from sqlalchemy import String, DateTime, ForeignKey
@@ -6,7 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from app.db.base import Base
 from enum import Enum
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from .project import Project
 
 class TaskStatus(enum.Enum):
     TODO = "todo"

@@ -2,9 +2,11 @@ from sqlalchemy.orm import Session
 from app.models.project import Project
 from app.exceptions.repository_exceptions import ProjectNotFoundError
 from typing import List
-from . import project_repository  # Import abstract
+from . import ProjectRepository
+from typing import cast, List
+from sqlalchemy import select
 
-class SQLAlchemyProjectRepository(project_repository):
+class SQLAlchemyProjectRepository(ProjectRepository):
     def __init__(self, db: Session):
         self.db = db
 
@@ -16,7 +18,8 @@ class SQLAlchemyProjectRepository(project_repository):
         return project
 
     def get(self, project_id: int) -> Project:
-        project = self.db.query(Project).filter(Project.id == project_id).first()
+        stmt = select(Project).where(Project.id == project_id)
+        project = self.db.execute(stmt).scalar_one_or_none()
         if not project:
             raise ProjectNotFoundError(f"Project with ID {project_id} not found")
         return project
@@ -32,4 +35,5 @@ class SQLAlchemyProjectRepository(project_repository):
         self.db.commit()
 
     def list_all(self) -> List[Project]:
-        return self.db.query(Project).order_by(Project.created_at).all()
+        stmt = select(Project).order_by(Project.created_at)
+        return list(self.db.execute(stmt).scalars().all())

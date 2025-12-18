@@ -1,10 +1,12 @@
-# app/models/project.py
 from typing import List, Optional
 from sqlalchemy import String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from app.db.base import Base
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from .task import Task
 
 class Project(Base):
     __tablename__ = "projects"

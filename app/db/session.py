@@ -1,4 +1,3 @@
-# app/db/session.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
@@ -8,15 +7,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-# Use DATABASE_URL from .env
-#DATABASE_URL = os.getenv("DATABASE_URL")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-# ساخت connection string نهایی
 DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL not set in .env file")
@@ -29,7 +25,7 @@ engine = create_engine(
     future=True
 )
 
-# Session factory — this is what we'll inject
+
 SessionLocal = sessionmaker(
     bind=engine,
     expire_on_commit=False,
@@ -47,3 +43,5 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+

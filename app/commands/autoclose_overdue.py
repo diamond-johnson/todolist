@@ -4,16 +4,15 @@ from app.repositories.task_repository import SQLAlchemyTaskRepository
 from app.models.task import TaskStatus
 
 def autoclose_overdue_tasks() -> None:
-    """Close all overdue tasks (deadline passed and not DONE)."""
+    """Close overdue tasks automatically to enforce deadlines (runs as scheduled command)."""
     with SessionLocal() as db:
-        task_repo = SQLAlchemyTaskRepository(db)
-        overdue = task_repo.get_overdue_tasks()
-        now = datetime.utcnow()
+        repo = SQLAlchemyTaskRepository(db)
+        overdue = repo.get_overdue_tasks()
         for task in overdue:
             task.status = TaskStatus.DONE
-            task.closed_at = now
-            db.commit()
-            print(f"Auto-closed task ID {task.id}: {task.title}")
+            task.closed_at = datetime.utcnow()
+        db.commit()
+        print(f"Closed {len(overdue)} overdue tasks.")
 
 if __name__ == "__main__":
     autoclose_overdue_tasks()
