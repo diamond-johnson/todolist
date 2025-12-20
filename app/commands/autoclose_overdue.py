@@ -1,18 +1,36 @@
+import asyncio
 from datetime import datetime
-from app.db.session import SessionLocal
+from app.db.session import AsyncSessionLocal
 from app.repositories.task_repository import SQLAlchemyTaskRepository
 from app.models.task import TaskStatus
 
-def autoclose_overdue_tasks() -> None:
-    """Close overdue tasks automatically to enforce deadlines (runs as scheduled command)."""
-    with SessionLocal() as db:
+
+async def _autoclose_logic():
+    """The core logic, now running asynchronously."""
+    async with AsyncSessionLocal() as db:
         repo = SQLAlchemyTaskRepository(db)
-        overdue = repo.get_overdue_tasks()
-        for task in overdue:
+        # We must 'await' the async method
+        overdue_tasks = await repo.get_overdue_tasks()
+        if not overdue_tasks:
+            print("No overdue tasks to close.")
+            return
+
+        for task in overdue_tasks:
             task.status = TaskStatus.DONE
             task.closed_at = datetime.utcnow()
-        db.commit()
-        print(f"Closed {len(overdue)} overdue tasks.")
+
+        await db.commit()
+        print(f"Closed {len(overdue_tasks)} overdue tasks.")
+
+
+def autoclose_overdue_tasks() -> None:
+    """
+    Synchronous wrapper that runs the async logic.
+    This is what the scheduler will call.
+    """
+    print("Running auto-close for overdue tasks...")
+    asyncio.run(_autoclose_logic())
+
 
 if __name__ == "__main__":
     autoclose_overdue_tasks()
