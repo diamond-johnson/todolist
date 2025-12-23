@@ -9,7 +9,7 @@ class TaskResponse(BaseModel):
     title: str
     description: Optional[str]
     status: TaskStatus
-    deadline: Optional[date]
+    deadline: Optional[datetime]
     created_at: datetime
     closed_at: Optional[datetime]
     project_id: int

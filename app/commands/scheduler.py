@@ -1,22 +1,42 @@
-from apscheduler.schedulers.background import BackgroundScheduler
+import asyncio
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from app.commands.autoclose_overdue import autoclose_overdue_tasks
 from app.db.session import SYNC_DATABASE_URL
-import time
 
-def start_scheduler() -> None:
-    """Start persistent scheduler for auto-closing overdue tasks (runs in background, jobs saved in DB)."""
-    scheduler = BackgroundScheduler(
-        jobstores={'default': SQLAlchemyJobStore(url=SYNC_DATABASE_URL)}
+
+async def start_scheduler() -> None:
+    """
+    Start the persistent, asynchronous scheduler for auto-closing overdue tasks.
+    """
+
+    scheduler = AsyncIOScheduler(
+        jobstores={
+            'default': SQLAlchemyJobStore(url=SYNC_DATABASE_URL)
+        }
     )
-    scheduler.add_job(autoclose_overdue_tasks, 'interval', minutes=15, id='autoclose_overdue')
+
+    scheduler.add_job(
+        autoclose_overdue_tasks,
+        'interval',
+        minutes=1,
+        id='autoclose_overdue',
+        replace_existing=True
+    )
+
     scheduler.start()
-    print("Scheduler started – auto-closing overdue tasks every 15 minutes (persistent via DB).")
+    print("Async scheduler started – auto-closing overdue tasks every 1 minute.")
+
     try:
         while True:
-            time.sleep(1)
+            await asyncio.sleep(3600)
     except (KeyboardInterrupt, SystemExit):
+        print("Scheduler shutting down...")
         scheduler.shutdown()
 
+
 if __name__ == "__main__":
-    start_scheduler()
+    try:
+        asyncio.run(start_scheduler())
+    except KeyboardInterrupt:
+        print("\nScheduler stopped by user.")
